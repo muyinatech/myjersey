@@ -27,17 +27,11 @@
             <artifactId>jersey-container-grizzly2-http</artifactId>
         </dependency>
         <!-- uncomment this to get JSON support:-->
-         <dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-moxy</artifactId>
         </dependency>
         <!-- -->
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.7.1</version>
-        </dependency>
 
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -76,70 +70,107 @@
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <finalName>myjersey-${project.version}</finalName>
-                    <archive>
-                        <manifest>
-                            <mainClass>muyinatech.myjersey.Main</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.10</version>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
                 <executions>
+                    <!-- Run shade goal on package phase -->
                     <execution>
-                        <id>copy-dependencies</id>
                         <phase>package</phase>
-                        <goals><goal>copy-dependencies</goal></goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.2.1</version>
-                <executions>
-                    <execution>
                         <goals>
-                            <goal>java</goal>
+                            <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <transformers>
+                                <!-- add Main-Class to manifest file -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>muyinatech.myjersey.Main</mainClass>
+                                </transformer>
+                                <!-- required to ensure META-INF services file merges properly -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <filters><!-- Required to fix - java.lang.SecurityException: Invalid signature file digest for Manifest main attributes
+                                        by excluding some files in META-INF-->
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <mainClass>muyinatech.myjersey.Main</mainClass>
-                    <!--<systemProperties>-->
-                        <!--<property>-->
-                            <!--<key>HOSTNAME</key>-->
-                            <!--<value>localhost</value>-->
-                        <!--</property>-->
-                        <!--<property>-->
-                            <!--<key>PORT</key>-->
-                            <!--<value>8080</value>-->
-                        <!--</property>-->
-                    <!--</systemProperties>-->
-                </configuration>
             </plugin>
+            <!--<plugin>-->
+            <!--<artifactId>maven-assembly-plugin</artifactId>-->
+            <!--<version>2.6</version>-->
+            <!--<configuration>-->
+            <!--<descriptorRefs>-->
+            <!--<descriptorRef>jar-with-dependencies</descriptorRef>-->
+            <!--</descriptorRefs>-->
+            <!--<finalName>myjersey-${project.version}</finalName>-->
+            <!--<archive>-->
+            <!--<manifest>-->
+            <!--<mainClass>muyinatech.myjersey.Main</mainClass>-->
+            <!--</manifest>-->
+            <!--</archive>-->
+            <!--</configuration>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<phase>package</phase>-->
+            <!--<goals>-->
+            <!--<goal>single</goal>-->
+            <!--</goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
+            <!--</plugin>-->
+            <!--<plugin>-->
+            <!--<groupId>org.apache.maven.plugins</groupId>-->
+            <!--<artifactId>maven-dependency-plugin</artifactId>-->
+            <!--<version>2.10</version>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<id>copy-dependencies</id>-->
+            <!--<phase>package</phase>-->
+            <!--<goals><goal>copy-dependencies</goal></goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
+            <!--</plugin>-->
+            <!--<plugin>-->
+            <!--<groupId>org.codehaus.mojo</groupId>-->
+            <!--<artifactId>exec-maven-plugin</artifactId>-->
+            <!--<version>1.2.1</version>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<goals>-->
+            <!--<goal>java</goal>-->
+            <!--</goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
+            <!--<configuration>-->
+            <!--<mainClass>muyinatech.myjersey.Main</mainClass>-->
+            <!--&lt;!&ndash;<systemProperties>&ndash;&gt;-->
+            <!--&lt;!&ndash;<property>&ndash;&gt;-->
+            <!--&lt;!&ndash;<key>HOSTNAME</key>&ndash;&gt;-->
+            <!--&lt;!&ndash;<value>localhost</value>&ndash;&gt;-->
+            <!--&lt;!&ndash;</property>&ndash;&gt;-->
+            <!--&lt;!&ndash;<property>&ndash;&gt;-->
+            <!--&lt;!&ndash;<key>PORT</key>&ndash;&gt;-->
+            <!--&lt;!&ndash;<value>8080</value>&ndash;&gt;-->
+            <!--&lt;!&ndash;</property>&ndash;&gt;-->
+            <!--&lt;!&ndash;</systemProperties>&ndash;&gt;-->
+            <!--</configuration>-->
+            <!--</plugin>-->
         </plugins>
     </build>
 
     <properties>
-        <jersey.version>2.17</jersey.version>
+        <jersey.version>2.22.1</jersey.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 </project>

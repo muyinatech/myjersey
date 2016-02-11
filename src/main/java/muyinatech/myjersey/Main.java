@@ -1,5 +1,6 @@
 package muyinatech.myjersey;
 
+import muyinatech.myjersey.service.CustomerService;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -15,17 +16,17 @@ import java.util.Optional;
 public class Main {
     // Base URI the Grizzly HTTP server will listen on
     public static final String BASE_URI;
-    public static final String protocol;
-    public static final Optional<String> host;
-    public static final String path;
-    public static final Optional<String> port;
+    public static final String PROTOCOL;
+    public static final Optional<String> HOST;
+    public static final String PATH;
+    public static final Optional<String> PORT;
 
     static{
-        protocol = "http://";
-        host = Optional.ofNullable(System.getenv("HOSTNAME"));
-        port = Optional.ofNullable(System.getenv("PORT"));
-        path = "myapp";
-        BASE_URI = protocol + host.orElse("localhost") + ":" + port.orElse("8080") + "/" + path + "/";
+        PROTOCOL = "http://";
+        HOST = Optional.ofNullable(System.getenv("HOSTNAME"));
+        PORT = Optional.ofNullable(System.getenv("PORT"));
+        PATH = "myapp";
+        BASE_URI = PROTOCOL + HOST.orElse("localhost") + ":" + PORT.orElse("8080") + "/" + PATH + "/";
     }
 
     /**
