@@ -1,7 +1,6 @@
 package muyinatech.myjersey.service;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.UpdateResult;
 import muyinatech.myjersey.Main;
 import muyinatech.myjersey.domain.Customer;
@@ -29,27 +28,27 @@ public class CustomerService {
     public static final String LAST_NAME = "lastName";
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Response createCustomer(Customer customer) throws IOException {
 
-        MongoDatabase mongoDatabase = DbConnection.getMongoDatabase();
         Document document = getDocument(customer);
-        mongoDatabase.getCollection("customers").insertOne(document);
+        DbConnection.getCustomersCollection().insertOne(document);
         ObjectId id = (ObjectId) document.get(ID);
 
+        Customer newCustomer = getCustomer(document);
+
         LOGGER.info("Created customer - " + id);
-        return Response.created(URI.create("/" + Main.PATH + "/customers/" + id)).entity(customer).build();
+        return Response.created(URI.create("/" + Main.PATH + "/customers/" + id)).entity(newCustomer).build();
     }
 
     @GET
     @Path("{id}")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Customer getCustomer(@PathParam("id") String id) {
         try {
             BasicDBObject objectId = new BasicDBObject("_id", new ObjectId(id));
-            Document document = DbConnection.getMongoDatabase()
-                    .getCollection("customers")
+            Document document = DbConnection.getCustomersCollection()
                     .find(objectId)
                     .first();
 
@@ -73,8 +72,7 @@ public class CustomerService {
 
         Document document = getDocument(customer);
 
-        UpdateResult updateResult = DbConnection.getMongoDatabase()
-                .getCollection("customers")
+        UpdateResult updateResult = DbConnection.getCustomersCollection()
                 .updateOne(eq("_id", id), document);
         if (updateResult.getModifiedCount() == 0) {
             throw new WebApplicationException(Response.Status.NOT_FOUND);

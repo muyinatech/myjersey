@@ -10,7 +10,7 @@ public class DbConnectionTest {
     @Test
     public void main() {
         DbConnection.init();
-        MongoDatabase mongoDatabase = DbConnection.getMongoDatabase();
+        DbConnection.getCustomersCollection();
         DbConnection.close();
     }
 }

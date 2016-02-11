@@ -1,5 +1,8 @@
 package muyinatech.myjersey.domain;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
 public class Customer {
 
     private String id;

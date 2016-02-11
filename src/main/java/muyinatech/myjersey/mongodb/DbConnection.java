@@ -1,7 +1,9 @@
 package muyinatech.myjersey.mongodb;
 
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
 
 public class DbConnection {
     private static MongoClient mongoClient;
@@ -13,8 +15,8 @@ public class DbConnection {
         mongoDatabase = mongoClient.getDatabase("orderEntry");
     }
 
-    public static MongoDatabase getMongoDatabase() {
-        return mongoDatabase;
+    public static MongoCollection<Document> getCustomersCollection() {
+        return mongoDatabase.getCollection("customers");
     }
 
     public static void close() {
