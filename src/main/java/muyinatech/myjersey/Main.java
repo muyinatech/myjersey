@@ -35,7 +35,7 @@ public class Main {
     public static HttpServer startServer() {
         // create a resource config that scans for JAX-RS resources and providers
         // in com.example.rest package
-        final ResourceConfig rc = new ResourceConfig().packages("muyinatech.myjersey");
+        final ResourceConfig rc = new ResourceConfig().registerInstances(new CustomerService());//packages("muyinatech.myjersey"); // singleton for now until db is created
 
         // create and start a new instance of grizzly http server
         // exposing the Jersey application at BASE_URI
