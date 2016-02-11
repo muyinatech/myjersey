@@ -5,6 +5,7 @@ import muyinatech.myjersey.domain.Customer;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.ws.rs.client.Client;
@@ -38,6 +39,7 @@ public class CustomerServiceIntTest {
     }
 
     @Test
+    @Ignore
     public void shouldCreateAndRetrieveCustomer() {
 
         String firstName = "Fred";
@@ -64,8 +66,48 @@ public class CustomerServiceIntTest {
     }
 
     @Test
-    public void shouldReturn404IfCustomerNotFound() {
+    @Ignore
+    public void shouldCreateAndUpdateCustomer() {
+
+        String firstName = "Meredith";
+        String lastName = "Kay";
+
+        Customer customer = new Customer();
+        customer.setFirstName(firstName);
+        customer.setLastName(lastName);
+
+        // Create customer
+        Entity<Customer> customerEntity = Entity.entity(customer, MediaType.APPLICATION_JSON_TYPE);
+        Response response = target.path("customers").request().post(customerEntity);
+
+        // Obtain customer
+        Customer newCustomer = response.readEntity(Customer.class);
+        newCustomer.setFirstName("Mary");
+
+        // Update customer
+        Entity<Customer> newCustomerEntity = Entity.entity(newCustomer, MediaType.APPLICATION_JSON_TYPE);
+        Response result = target.path("customers/" +  newCustomer.getId()).request().put(newCustomerEntity);
+
+        assertThat(result.getStatus(), is(Response.Status.NO_CONTENT.getStatusCode()));
+    }
+
+    @Test
+    @Ignore
+    public void shouldReturn404IfCustomerNotFoundForCreate() {
         Response response = target.path("customers/100").request().get();
+
+        assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+    }
+
+    @Test
+    @Ignore
+    public void shouldReturn404IfCustomerNotFoundForUpdate() {
+        Customer customer = new Customer();
+        customer.setFirstName("Some");
+        customer.setLastName("Body");
+        Entity<Customer> customerEntity = Entity.entity(customer, MediaType.APPLICATION_JSON_TYPE);
+
+        Response response = target.path("customers/100").request().put(customerEntity);
 
         assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
     }

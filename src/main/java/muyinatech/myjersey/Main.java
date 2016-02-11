@@ -1,5 +1,6 @@
 package muyinatech.myjersey;
 
+import muyinatech.myjersey.mongodb.DbConnection;
 import muyinatech.myjersey.service.CustomerService;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
@@ -50,9 +51,11 @@ public class Main {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public static void main(String[] args) throws IOException {
         final HttpServer server = startServer();
+        DbConnection.init();
         System.out.println(String.format("Jersey app started with WADL available at "
                 + "%sapplication.wadl\nHit enter to stop it...", BASE_URI));
         System.in.read();
+        DbConnection.close();
         server.shutdownNow();
     }
 }

@@ -2,7 +2,7 @@ package muyinatech.myjersey.domain;
 
 public class Customer {
 
-    private int id;
+    private String id;
     private String firstName;
     private String lastName;
     private String street;
@@ -10,11 +10,11 @@ public class Customer {
     private String postcode;
     private String country;
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
