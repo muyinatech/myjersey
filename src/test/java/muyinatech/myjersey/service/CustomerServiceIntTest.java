@@ -56,40 +56,32 @@ public class CustomerServiceIntTest {
         Response response = target.path("customers").request().post(customerEntity);
 
         assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
-        assertThat(response.getLocation().toString(), is("http://localhost:8080/myapp/customers/1"));
         assertThat(response.getEntity(), is(notNullValue()));
+        String customerId = response.readEntity(Customer.class).getId();
 
 
-        Customer result = target.path("customers/1").request().get(Customer.class);
+        Customer result = target.path("customers/" + customerId).request().get(Customer.class);
 
         assertThat(result, is(notNullValue()));
-        assertThat(result.getId(), is(1));
+        assertThat(result.getId(), is(customerId));
         assertThat(result.getFirstName(), is(firstName));
         assertThat(result.getLastName(), is(lastName));
     }
 
     @Test
     @Ignore
-    public void shouldCreateAndUpdateCustomer() {
-
-        String firstName = "Meredith";
-        String lastName = "Kay";
-
-        Customer customer = new Customer();
-        customer.setFirstName(firstName);
-        customer.setLastName(lastName);
-
-        // Create customer
-        Entity<Customer> customerEntity = Entity.entity(customer, MediaType.APPLICATION_JSON_TYPE);
-        Response response = target.path("customers").request().post(customerEntity);
+    public void shouldUpdateCustomer() {
 
         // Obtain customer
-        Customer newCustomer = response.readEntity(Customer.class);
-        newCustomer.setFirstName("Mary");
+        Customer newCustomer = new Customer();
+        newCustomer.setId("56bd028852a90329206364a3");
+        newCustomer.setFirstName("Fred");
+        newCustomer.setLastName("Wilson");
+        newCustomer.setCity("London");
 
         // Update customer
         Entity<Customer> newCustomerEntity = Entity.entity(newCustomer, MediaType.APPLICATION_JSON_TYPE);
-        Response result = target.path("customers/" +  newCustomer.getId()).request().put(newCustomerEntity);
+        Response result = target.path("customers/" +  "56bd028852a90329206364a3").request().put(newCustomerEntity);
 
         assertThat(result.getStatus(), is(Response.Status.NO_CONTENT.getStatusCode()));
     }
@@ -110,7 +102,7 @@ public class CustomerServiceIntTest {
         customer.setLastName("Body");
         Entity<Customer> customerEntity = Entity.entity(customer, MediaType.APPLICATION_JSON_TYPE);
 
-        Response response = target.path("customers/100").request().put(customerEntity);
+        Response response = target.path("customers/00bd028852a90329206364a3").request().put(customerEntity);
 
         assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
     }
@@ -129,4 +121,5 @@ public class CustomerServiceIntTest {
         response = target.path("customers/56bd028852a90329206364a3").request().header("If-None-Match", eTag).get();
         assertThat(response.getStatus(), is(Response.Status.NOT_MODIFIED.getStatusCode()));
     }
+
 }

@@ -29,6 +29,10 @@ public class CustomerService {
     private static final String ID = "_id";
     private static final String FIRST_NAME = "firstName";
     private static final String LAST_NAME = "lastName";
+    private static final String STREET = "street";
+    private static final String POSTCODE = "postcode";
+    private static final String CITY = "city";
+    private static final String COUNTRY = "country";
 
     @POST
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
@@ -62,17 +66,7 @@ public class CustomerService {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Response getCustomer(@PathParam("id") String id, @Context Request request) {
         try {
-            BasicDBObject objectId = new BasicDBObject("_id", new ObjectId(id));
-            Document document = DbConnection.getCustomersCollection()
-                    .find(objectId)
-                    .first();
-
-            if (document == null) {
-                LOGGER.error("Customer {id=" + id + " } does not exist.");
-                throw new NotFoundException();
-            }
-
-            Customer customer = getCustomer(document);
+            Customer customer = getCustomerFromDb(id);
             EntityTag etag = new EntityTag(Integer.toString(customer.hashCode())); // compute E-Tag
 
             Response.ResponseBuilder builder = request.evaluatePreconditions(etag);
@@ -94,30 +88,65 @@ public class CustomerService {
     @PUT
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateCustomer(@PathParam("id") int id, Customer customer) {
+    public Response updateCustomer(@PathParam("id") String id, @Context Request request, Customer customer) {
+
+        Customer currentCustomer = getCustomerFromDb(id);
+        EntityTag etag = new EntityTag(Integer.toString(currentCustomer.hashCode())); // compute E-Tag
+        Response.ResponseBuilder builder = request.evaluatePreconditions(etag);
+        if (builder != null) { // client is not up to date (send back 412)
+            return builder.build();
+        }
 
         Document document = getDocument(customer);
+        BasicDBObject objectId = new BasicDBObject("_id", new ObjectId(id));
+        DbConnection.getCustomersCollection().replaceOne(objectId, document);
 
-        UpdateResult updateResult = DbConnection.getCustomersCollection()
-                .updateOne(eq("_id", id), document);
-        if (updateResult.getModifiedCount() == 0) {
-            throw new NotFoundException();
-        }
+        return Response.noContent().build();
     }
 
     private Document getDocument(Customer customer) {
         Document customerDocument = new Document();
         customerDocument.append(FIRST_NAME, customer.getFirstName());
         customerDocument.append(LAST_NAME, customer.getLastName());
+        customerDocument.append(STREET, customer.getStreet());
+        customerDocument.append(POSTCODE, customer.getPostcode());
+        customerDocument.append(CITY, customer.getCity());
+        customerDocument.append(COUNTRY, customer.getCountry());
         return customerDocument;
     }
 
     private Customer getCustomer(Document document) {
         Customer customer = new Customer();
-        customer.setId(document.get(ID).toString());
-        customer.setFirstName(document.get(FIRST_NAME).toString());
-        customer.setLastName(document.get(LAST_NAME).toString());
+        customer.setId(getField(document, ID));
+        customer.setFirstName(getField(document, FIRST_NAME));
+        customer.setLastName(getField(document, LAST_NAME));
+        customer.setStreet(getField(document, STREET));
+        customer.setPostcode(getField(document, POSTCODE));
+        customer.setCity(getField(document, CITY));
+        customer.setCountry(getField(document, COUNTRY));
         return customer;
+    }
+
+    private String getField(Document document, String fieldName) {
+        Object field = document.get(fieldName);
+        if (field == null) {
+            return null;
+        }
+        return field.toString();
+    }
+
+    private Customer getCustomerFromDb(@PathParam("id") String id) {
+        BasicDBObject objectId = new BasicDBObject("_id", new ObjectId(id));
+        Document document = DbConnection.getCustomersCollection()
+                .find(objectId)
+                .first();
+
+        if (document == null) {
+            LOGGER.error("Customer {id=" + id + " } does not exist.");
+            throw new NotFoundException();
+        }
+
+        return getCustomer(document);
     }
 
     private CacheControl getCacheControl() {
