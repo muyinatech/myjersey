@@ -3,7 +3,7 @@ package muyinatech.myjersey.service;
 import com.mongodb.BasicDBObject;
 import com.mongodb.Block;
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.result.UpdateResult;
+import com.mongodb.client.result.DeleteResult;
 import muyinatech.myjersey.Main;
 import muyinatech.myjersey.domain.Customer;
 import muyinatech.myjersey.mongodb.DbConnection;
@@ -18,8 +18,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.mongodb.client.model.Filters.eq;
 
 
 @Path("/customers")
@@ -102,6 +100,15 @@ public class CustomerService {
         DbConnection.getCustomersCollection().replaceOne(objectId, document);
 
         return Response.noContent().build();
+    }
+
+    @DELETE
+    @Path("{id}")
+    public void deleteCustomer(@PathParam("id") String id) {
+        DeleteResult result = DbConnection.getCustomersCollection().deleteOne(new BasicDBObject("_id", new ObjectId(id)));
+        if (result.getDeletedCount() == 0) {
+            throw new NotFoundException();
+        }
     }
 
     private Document getDocument(Customer customer) {

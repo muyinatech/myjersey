@@ -81,9 +81,9 @@ public class CustomerServiceIntTest {
 
         // Update customer
         Entity<Customer> newCustomerEntity = Entity.entity(newCustomer, MediaType.APPLICATION_JSON_TYPE);
-        Response result = target.path("customers/" +  "56bd028852a90329206364a3").request().put(newCustomerEntity);
+        Response response = target.path("customers/" +  "56bd028852a90329206364a3").request().put(newCustomerEntity);
 
-        assertThat(result.getStatus(), is(Response.Status.NO_CONTENT.getStatusCode()));
+        assertThat(response.getStatus(), is(Response.Status.NO_CONTENT.getStatusCode()));
     }
 
     @Test
@@ -119,7 +119,48 @@ public class CustomerServiceIntTest {
         String eTag = response.getEntityTag().toString();
 
         response = target.path("customers/56bd028852a90329206364a3").request().header("If-None-Match", eTag).get();
+
         assertThat(response.getStatus(), is(Response.Status.NOT_MODIFIED.getStatusCode()));
     }
 
+    @Test
+    @Ignore
+    public void shouldReturn412IfCustomerIsStale() {
+        // Obtain customer
+        Customer newCustomer = new Customer();
+        newCustomer.setId("56bd028852a90329206364a3");
+        newCustomer.setFirstName("Fred");
+        newCustomer.setLastName("Wilson");
+        newCustomer.setCity("London");
+
+        // Update customer
+        Entity<Customer> newCustomerEntity = Entity.entity(newCustomer, MediaType.APPLICATION_JSON_TYPE);
+        Response response = target.path("customers/56bd028852a90329206364a3")
+                .request()
+                .header("If-Match", "\"-28945\"")
+                .put(newCustomerEntity);
+
+        assertThat(response.getStatus(), is(Response.Status.PRECONDITION_FAILED.getStatusCode()));
+    }
+
+
+    @Test
+    @Ignore
+    public void shouldDeleteCustomer() {
+        Response response = target.path("customers/56bcfe6152a9031380633cb6")
+                .request()
+                .delete();
+
+        assertThat(response.getStatus(), is(Response.Status.OK));
+    }
+
+    @Test
+    @Ignore
+    public void shouldReturn404IfCustomerNotFoundForDelete() {
+        Response response = target.path("customers/00bcfe6152a9031380633cb6")
+                .request()
+                .delete();
+
+        assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+    }
 }
