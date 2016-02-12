@@ -2,6 +2,7 @@ package muyinatech.myjersey.service;
 
 import muyinatech.myjersey.Main;
 import muyinatech.myjersey.domain.Customer;
+import muyinatech.myjersey.mongodb.DbConnection;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.After;
 import org.junit.Before;
@@ -27,6 +28,7 @@ public class CustomerServiceIntTest {
     public void setUp() throws Exception {
         // start the server
         server = Main.startServer();
+        DbConnection.init();
         // create the client
         Client c = ClientBuilder.newClient();
 
@@ -35,6 +37,7 @@ public class CustomerServiceIntTest {
 
     @After
     public void tearDown() throws Exception {
+        DbConnection.close();
         server.shutdownNow();
     }
 
@@ -110,5 +113,20 @@ public class CustomerServiceIntTest {
         Response response = target.path("customers/100").request().put(customerEntity);
 
         assertThat(response.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+    }
+
+    @Test
+    @Ignore
+    public void shouldReturn304IfCustomerNotModified() {
+
+        Response response = target.path("customers/56bd028852a90329206364a3").request().get();
+
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+        assertThat(response.getHeaderString("Cache-Control"), is("private, no-store, no-transform, max-age=300"));
+
+        String eTag = response.getEntityTag().toString();
+
+        response = target.path("customers/56bd028852a90329206364a3").request().header("If-None-Match", eTag).get();
+        assertThat(response.getStatus(), is(Response.Status.NOT_MODIFIED.getStatusCode()));
     }
 }

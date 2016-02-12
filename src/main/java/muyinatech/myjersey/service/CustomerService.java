@@ -1,6 +1,8 @@
 package muyinatech.myjersey.service;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.Block;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.result.UpdateResult;
 import muyinatech.myjersey.Main;
 import muyinatech.myjersey.domain.Customer;
@@ -11,10 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -23,9 +26,9 @@ import static com.mongodb.client.model.Filters.eq;
 public class CustomerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomerService.class);
-    public static final String ID = "_id";
-    public static final String FIRST_NAME = "firstName";
-    public static final String LAST_NAME = "lastName";
+    private static final String ID = "_id";
+    private static final String FIRST_NAME = "firstName";
+    private static final String LAST_NAME = "lastName";
 
     @POST
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
@@ -39,13 +42,25 @@ public class CustomerService {
         Customer newCustomer = getCustomer(document);
 
         LOGGER.info("Created customer - " + id);
-        return Response.created(URI.create("/" + Main.PATH + "/customers/" + id)).entity(newCustomer).build();
+
+        return Response.created(URI.create("/" + Main.PATH + "/customers/" + id))
+                .entity(newCustomer)
+                .build();
+    }
+
+    @GET
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    public List<Customer> getCustomers() {
+        final List<Customer> customers = new ArrayList<>();
+        FindIterable<Document> documents = DbConnection.getCustomersCollection().find();
+        documents.forEach((Block<Document>) document -> customers.add(getCustomer(document)));
+        return customers;
     }
 
     @GET
     @Path("{id}")
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    public Customer getCustomer(@PathParam("id") String id) {
+    public Response getCustomer(@PathParam("id") String id, @Context Request request) {
         try {
             BasicDBObject objectId = new BasicDBObject("_id", new ObjectId(id));
             Document document = DbConnection.getCustomersCollection()
@@ -54,13 +69,24 @@ public class CustomerService {
 
             if (document == null) {
                 LOGGER.error("Customer {id=" + id + " } does not exist.");
-                throw new WebApplicationException(Response.Status.NOT_FOUND);
+                throw new NotFoundException();
             }
 
-            return getCustomer(document);
-        } catch(IllegalArgumentException e) {
-            LOGGER.error("Invalid id format in request.",  e);
-            throw new WebApplicationException(Response.Status.NOT_FOUND);
+            Customer customer = getCustomer(document);
+            EntityTag etag = new EntityTag(Integer.toString(customer.hashCode())); // compute E-Tag
+
+            Response.ResponseBuilder builder = request.evaluatePreconditions(etag);
+
+            if (builder == null) { // cached resource did change -> serve updated content
+                builder = Response.ok(customer);
+                builder.tag(etag);
+            }
+
+            return builder.cacheControl(getCacheControl()).build();
+
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("Invalid id format in request.", e);
+            throw new NotFoundException();
         }
 
     }
@@ -75,7 +101,7 @@ public class CustomerService {
         UpdateResult updateResult = DbConnection.getCustomersCollection()
                 .updateOne(eq("_id", id), document);
         if (updateResult.getModifiedCount() == 0) {
-            throw new WebApplicationException(Response.Status.NOT_FOUND);
+            throw new NotFoundException();
         }
     }
 
@@ -92,6 +118,14 @@ public class CustomerService {
         customer.setFirstName(document.get(FIRST_NAME).toString());
         customer.setLastName(document.get(LAST_NAME).toString());
         return customer;
+    }
+
+    private CacheControl getCacheControl() {
+        CacheControl cacheControl = new CacheControl();
+        cacheControl.setMaxAge(300); // response is valid for 5 mins
+        cacheControl.setPrivate(true); // only the client can cache the response, no intermediary such as CDN
+        cacheControl.setNoStore(true); // response should not be stored on disk
+        return cacheControl;
     }
 
 }
